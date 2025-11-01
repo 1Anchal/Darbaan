@@ -1,0 +1,257 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  firstName       String
+  lastName        String
+  role            UserRole
+  studentId       String?   @unique
+  employeeId      String?   @unique
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  bleDevices      BLEDevice[]
+  attendanceRecords AttendanceRecord[]
+  instructedClasses Class[] @relation("ClassInstructor")
+  enrolledClasses ClassEnrollment[]
+
+  @@map("users")
+}
+
+model Class {
+  id              String    @id @default(cuid())
+  name            String
+  code            String    @unique
+  description     String?
+  instructorId    String
+  maxCapacity     Int
+  location        String
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  instructor      User      @relation("ClassInstructor", fields: [instructorId], references: [id])
+  enrollments     ClassEnrollment[]
+  attendanceRecords AttendanceRecord[]
+  schedules       ClassSchedule[]
+
+  @@map("classes")
+}
+
+model ClassSchedule {
+  id          String @id @default(cuid())
+  classId     String
+  dayOfWeek   Int    // 0-6 (Sunday-Saturday)
+  startTime   String // HH:MM format
+  endTime     String // HH:MM format
+
+  // Relations
+  class       Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@map("class_schedules")
+}
+
+model ClassEnrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  classId   String
+  enrolledAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id])
+  class     Class    @relation(fields: [classId], references: [id])
+
+  @@unique([userId, classId])
+  @@map("class_enrollments")
+}
+
+model BLEDevice {
+  id               String      @id @default(cuid())
+  userId           String
+  deviceId         String      @unique // Android device ID for mobile devices
+  bluetoothAddress String      // Bluetooth MAC address
+  macAddress       String?     // Legacy field, kept for backward compatibility
+  deviceName       String
+  deviceType       DeviceType
+  isActive         Boolean     @default(true)
+  lastSeen         DateTime?
+  batteryLevel     Int?
+  signalStrength   Int?
+  metadata         Json?       // Additional device metadata (Android version, app version, etc.)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  // Relations
+  user             User        @relation(fields: [userId], references: [id])
+  attendanceRecords AttendanceRecord[]
+
+  @@index([userId, deviceType])
+  @@index([bluetoothAddress])
+  @@index([lastSeen])
+  @@map("ble_devices")
+}
+
+model AttendanceRecord {
+  id              String           @id @default(cuid())
+  userId          String
+  classId         String?
+  deviceId        String
+  entryTime       DateTime
+  exitTime        DateTime?
+  location        String
+  isLateArrival   Boolean          @default(false)
+  attendanceStatus AttendanceStatus
+  createdAt       DateTime         @default(now())
+
+  // Relations
+  user            User             @relation(fields: [userId], references: [id])
+  class           Class?           @relation(fields: [classId], references: [id])
+  device          BLEDevice        @relation(fields: [deviceId], references: [id])
+
+  @@map("attendance_records")
+}
+
+model Location {
+  id          String   @id @default(cuid())
+  name        String
+  code        LocationCode
+  maxCapacity Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("locations")
+}
+
+model SystemSettings {
+  id        String          @id @default(cuid())
+  category  SettingCategory
+  
+  // General Settings
+  systemName      String?
+  timezone        String?
+  language        String?
+  dateFormat      String?
+  enableBackups   Boolean?
+  
+  // Attendance Settings
+  lateThresholdMins    Int?
+  absentThresholdMins  Int?
+  cooldownPeriodSecs   Int?
+  enableManualEntry    Boolean?
+  
+  // Notification Settings
+  emailNotifications   Boolean?
+  smsNotifications     Boolean?
+  pushNotifications    Boolean?
+  dailyReports         Boolean?
+  securityAlerts       Boolean?
+  
+  // Security Settings
+  sessionTimeoutMins   Int?
+  passwordExpiryDays   Int?
+  twoFactorAuth        Boolean?
+  dataEncryption       Boolean?
+  auditLogs            Boolean?
+  
+  // System Settings
+  syncIntervalMins     Int?
+  logLevel             LogLevel?
+  autoSync             Boolean?
+  offlineMode          Boolean?
+  debugMode            Boolean?
+  
+  updatedBy String
+  updatedAt DateTime @updatedAt
+
+  @@unique([category])
+  @@map("system_settings")
+}
+
+model AuditLog {
+  id            String        @id @default(cuid())
+  eventType     String
+  severity      AuditSeverity
+  userId        String?
+  targetUserId  String?
+  resourceId    String?
+  resourceType  String?
+  action        String
+  description   String
+  ipAddress     String?
+  userAgent     String?
+  requestId     String?
+  metadata      String?       // JSON string
+  timestamp     DateTime      @default(now())
+  success       Boolean
+  errorMessage  String?
+
+  @@index([eventType])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([severity])
+  @@map("audit_logs")
+}
+
+enum UserRole {
+  STUDENT
+  FACULTY
+  ADMIN
+}
+
+enum DeviceType {
+  SMARTPHONE
+  WEARABLE
+  BEACON
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  PARTIAL
+}
+
+enum LocationCode {
+  FOOD_STREET
+  ROCK_PLAZA
+  CENTRAL_LIBRARY
+  MAIN_AUDITORIUM
+}
+
+enum SettingCategory {
+  GENERAL
+  ATTENDANCE
+  NOTIFICATIONS
+  SECURITY
+  SYSTEM
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARNING
+  ERROR
+}
+
+enum AuditSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
