@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 Color Scheme -->
+    <color name="md_theme_light_primary">#1976D2</color>
+    <color name="md_theme_light_onPrimary">#FFFFFF</color>
+    <color name="md_theme_light_primaryContainer">#D3E3FD</color>
+    <color name="md_theme_light_onPrimaryContainer">#001C38</color>
+    <color name="md_theme_light_secondary">#DC004E</color>
+    <color name="md_theme_light_onSecondary">#FFFFFF</color>
+    <color name="md_theme_light_secondaryContainer">#FFD9E2</color>
+    <color name="md_theme_light_onSecondaryContainer">#3E0014</color>
+    
+    <!-- Status colors -->
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FF9800</color>
+    <color name="error">#F44336</color>
+    <color name="info">#2196F3</color>
+    
+    <!-- Background colors -->
+    <color name="background_light">#FAFAFA</color>
+    <color name="surface_light">#FFFFFF</color>
+    <color name="outline">#79747E</color>
+    
+    <!-- QR Scanner Colors -->
+    <color name="zxing_viewfinder_laser">#FF0000</color>
+    <color name="zxing_viewfinder_mask">#60000000</color>
+    <color name="zxing_result_view">#B0000000</color>
+    <color name="zxing_possible_result_points">#C0FFFF00</color>
+</resources>
